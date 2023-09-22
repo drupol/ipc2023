@@ -1,0 +1,106 @@
+name: Build
+
+on: [push]
+
+jobs:
+  dependencies:
+    name: Build dependencies
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Check out source files
+        uses: actions/checkout@v4
+
+      - name: Create global variables
+        id: version
+        run: echo "version=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+  build:
+    name: Build PDF files
+    runs-on: ubuntu-latest
+    needs: dependencies
+
+    steps:
+      - name: Set git to use LF
+        run: |
+            git config --global core.autocrlf false
+            git config --global core.eol lf
+
+      - name: Check out source files
+        uses: actions/checkout@v4
+
+      - name: Create global variables
+        id: version
+        run: echo "version=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Build document
+        run: |
+          nix build .#ipc2023 --quiet
+          cp result/* .
+
+      - name: Upload build assets
+        uses: actions/upload-artifact@v3
+        with:
+          name: assets
+          path: ipc2023.pdf
+
+      - name: Upload build assets
+        uses: actions/upload-artifact@v3
+        with:
+          name: assets
+          path: ipc2023.pdfpc
+
+  release:
+    name: "Create tag/pre-release"
+    runs-on: ubuntu-latest
+    needs: [dependencies,build]
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create pre-release (${{ needs.dependencies.outputs.version }})
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}-${{ needs.dependencies.outputs.version }}
+          release_name: Version ${{ github.run_number }} (${{ needs.dependencies.outputs.version }})
+          draft: false
+          prerelease: true
+
+  assets:
+    name: Upload release assets
+    runs-on: ubuntu-latest
+    needs: [dependencies,release]
+
+    steps:
+      - name: Download build assets (${{ matrix.assets.input }})
+        uses: actions/download-artifact@v3
+        with:
+          name: assets
+          path: assets
+
+      - name: Upload release assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: assets/ipc2023.pdf
+          asset_name: ${{ github.run_number }}--ipc2023--${{ needs.dependencies.outputs.version }}.pdf
+          asset_content_type: application/pdf
+
+      - name: Upload release assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: assets/ipc2023.pdfpc
+          asset_name: ${{ github.run_number }}--ipc2023--${{ needs.dependencies.outputs.version }}.pdfpc
+          asset_content_type: application/pdf
