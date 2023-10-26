@@ -15,6 +15,10 @@ will be:
  - `nix build .#ipc2023`: a command that will build the document once. The
    resulting file(s) will be in `result/` at the root of the project.
 
+## Latest version
+
+The latest version is available at: https://github.com/drupol/ipc2023/releases/latest
+
 ## Dates
 
 - 2023/10/26: [International PHP Conference 2023](https://phpconference.com/web-development/leveraging-nix-php-ecosystem/), Munich
