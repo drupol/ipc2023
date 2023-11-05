@@ -16,16 +16,16 @@
 
     perSystem = { config, self', inputs', pkgs, system, lib, ... }:
       let
+        typst = pkgs.typst;
         typst-packages = pkgs.callPackage ./nix/typst-packages.nix { src = inputs.typst-packages; };
         pdfpc-extractor = pkgs.callPackage ./nix/pdfpc-extractor.nix { };
-        virgil = pkgs.callPackage ./nix/virgil.nix { };
 
         fontsConf = pkgs.symlinkJoin {
           name = "typst-fonts";
           paths = [
             pkgs.iosevka
             pkgs.inconsolata-nerdfont
-            virgil
+            pkgs.fg-virgil
           ];
         };
 
@@ -44,7 +44,7 @@
           buildPhase = ''
             runHook preBuild
 
-            ${lib.getExe pkgs.typst-dev} \
+            ${lib.getExe typst} \
               compile \
               --root ./. \
               --font-path ${fontsConf} \
@@ -73,14 +73,14 @@
         mkBuildDocumentScript = documentName: pkgs.writeShellApplication {
           name = "build-${documentName}";
           runtimeInputs = [
-            pkgs.typst-dev
+            typst
             pdfpc-extractor
           ];
 
           text = ''
             export XDG_CACHE_HOME=${typst-packages}
 
-            ${lib.getExe pkgs.typst-dev} \
+            ${lib.getExe typst} \
               compile \
               --root ./. \
               --font-path ${fontsConf} \
@@ -98,13 +98,13 @@
         mkWatchDocumentScript = documentName: pkgs.writeShellApplication {
           name = "watch-${documentName}";
           runtimeInputs = [
-            pkgs.typst-dev
+            typst
             pdfpc-extractor
           ];
           text = ''
             export XDG_CACHE_HOME=${typst-packages}
 
-            ${lib.getExe pkgs.typst-dev} \
+            ${lib.getExe typst} \
               watch \
               --root ./. \
               --font-path ${fontsConf} \
@@ -153,14 +153,13 @@
         devShells.default = pkgs.mkShellNoCC {
           name = "typst-devshell";
           buildInputs = (lib.attrValues scriptDrvs) ++ [
-            pkgs.pdfpc
-            pkgs.typst-dev
-            pkgs.typst-fmt
             pdfpc-extractor
+            typst
             typst-packages
             pkgs.asciinema
-            pkgs.asciinema-agg
             pkgs.gnuplot
+            pkgs.pdfpc
+            pkgs.typst-fmt
           ];
         };
       };
