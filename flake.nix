@@ -35,7 +35,7 @@
           src = pkgs.lib.cleanSource ./.;
 
           buildInputs = [
-            pkgs.typst-dev
+            typst
             pdfpc-extractor
           ];
 
