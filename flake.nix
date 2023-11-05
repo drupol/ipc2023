@@ -160,6 +160,7 @@
             pkgs.gnuplot
             pkgs.pdfpc
             pkgs.typst-fmt
+            pkgs.vhs
           ];
         };
       };
