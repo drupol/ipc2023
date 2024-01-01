@@ -47,7 +47,7 @@ jobs:
           cp result/* .
 
       - name: Upload build assets
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ipc2023--PR-${{ github.event.pull_request.number }}--${{ github.sha }}
           path: ipc2023.pdf
